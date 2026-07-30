@@ -4305,9 +4305,10 @@
 
     function currentFieldFontSize(el) {
       if (!el) return 0;
-      const computed = typeof getComputedStyle === "function" ? parseFloat(getComputedStyle(el).fontSize) : NaN;
       const inline = parseFloat(el.style.fontSize);
-      return Number.isFinite(computed) ? computed : (Number.isFinite(inline) ? inline : 16);
+      if (Number.isFinite(inline)) return inline;
+      const computed = typeof getComputedStyle === "function" ? parseFloat(getComputedStyle(el).fontSize) : NaN;
+      return Number.isFinite(computed) ? computed : 16;
     }
 
     function currentFieldColor(el) {
@@ -4364,7 +4365,8 @@
     function setSelectedFieldFontSize(size) {
       if (!selectedLayoutField) return;
       const id = selectedLayoutField.id;
-      const nextSize = Math.max(6, Math.min(72, Number(size) || currentFieldFontSize(selectedLayoutField)));
+      const requested = parseNumber(size);
+      const nextSize = Math.max(6, Math.min(72, requested || currentFieldFontSize(selectedLayoutField)));
       layoutPositions[id] = { ...(layoutPositions[id] || {}), fontSize: Number(nextSize.toFixed(1)) };
       selectedLayoutField.style.fontSize = `${layoutPositions[id].fontSize}px`;
       saveLayoutPositions();
