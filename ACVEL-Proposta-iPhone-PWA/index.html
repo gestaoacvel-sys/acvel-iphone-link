@@ -2718,6 +2718,11 @@
     const PANEL_WIDTH_MIN = 320;
     const PANEL_WIDTH_MAX = 760;
     const MOBILE_A4_WIDTH_PX = 794;
+    const MOBILE_PDF_FIELD_SCALE = 1.58;
+    const MOBILE_PDF_FIELD_SELECTOR = [
+      ".cover-page .word-field",
+      ".flag-projection-page .word-field:not(.word-text-box)"
+    ].join(", ");
 
     let layoutPositions = {};
     let layoutDrag = null;
@@ -5059,6 +5064,24 @@
         .filter((page) => window.getComputedStyle(page).display !== "none");
     }
 
+    function applyTemporaryMobilePdfFieldScale() {
+      if (!isMobilePreviewMode()) return () => {};
+      const fields = Array.from(document.querySelectorAll(MOBILE_PDF_FIELD_SELECTOR))
+        .filter((el) => !el.classList.contains("is-layout-hidden"));
+      const originals = fields.map((el) => ({ el, fontSize: el.style.fontSize }));
+      fields.forEach((el) => {
+        const current = parseFloat(getComputedStyle(el).fontSize);
+        if (!Number.isFinite(current)) return;
+        el.style.fontSize = `${Number((current * MOBILE_PDF_FIELD_SCALE).toFixed(2))}px`;
+      });
+      return () => {
+        originals.forEach(({ el, fontSize }) => {
+          if (fontSize) el.style.fontSize = fontSize;
+          else el.style.removeProperty("font-size");
+        });
+      };
+    }
+
     function downloadPdfBlob(blob, filename) {
       const url = URL.createObjectURL(blob);
       const link = document.createElement("a");
@@ -5112,10 +5135,14 @@
       const { jsPDF } = window.jspdf;
       const pdf = new jsPDF({ orientation: "portrait", unit: "mm", format: "a4", compress: true });
 
+      let restorePdfFieldScale = () => {};
       document.body.classList.add("pdf-render-mode");
       await new Promise((resolve) => requestAnimationFrame(resolve));
 
       try {
+        restorePdfFieldScale = applyTemporaryMobilePdfFieldScale();
+        await new Promise((resolve) => requestAnimationFrame(resolve));
+
         for (const [index, page] of pages.entries()) {
           if (index) pdf.addPage("a4", "portrait");
           const canvas = await window.html2canvas(page, {
@@ -5157,6 +5184,7 @@
         await deliverPdfBlob(pdf.output("blob"), filename);
         return true;
       } finally {
+        restorePdfFieldScale();
         document.body.classList.remove("pdf-render-mode");
         fitMobilePreview();
       }
@@ -5350,7 +5378,7 @@
 
     if ("serviceWorker" in navigator && location.protocol !== "file:") {
       window.addEventListener("load", () => {
-        navigator.serviceWorker.register("./service-worker.js?v=10").catch((error) => {
+        navigator.serviceWorker.register("./service-worker.js?v=11").catch((error) => {
           console.warn("Service worker nao registrado.", error);
         });
       });
