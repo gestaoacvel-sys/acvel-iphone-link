@@ -2331,6 +2331,7 @@
           </div>
         </div>
         <div class="layout-actions">
+          <button class="btn" type="button" id="multiSelectBtn"><span class="btn-icon">□</span>Vários</button>
           <button class="btn" type="button" id="hideFieldBtn" disabled><span class="btn-icon">-</span>Ocultar campo</button>
           <button class="btn" type="button" id="showAllFieldsBtn"><span class="btn-icon">+</span>Mostrar todos</button>
           <button class="btn" type="button" id="resetLayoutBtn"><span class="btn-icon">R</span>Restaurar padrao</button>
@@ -2721,6 +2722,8 @@
     let layoutPositions = {};
     let layoutDrag = null;
     let selectedLayoutField = null;
+    let selectedLayoutFields = new Set();
+    let multiLayoutSelectMode = false;
     let previewZoom = 1;
     let mobilePreviewScale = 1;
     let panelResizeDrag = null;
@@ -4233,7 +4236,55 @@
       if (status) status.textContent = message;
     }
 
+    function getSelectedLayoutFields() {
+      const fields = Array.from(selectedLayoutFields).filter((el) =>
+        el && el.isConnected && !el.classList.contains("is-layout-hidden")
+      );
+      selectedLayoutFields = new Set(fields);
+      if (selectedLayoutField && (!selectedLayoutField.isConnected || selectedLayoutField.classList.contains("is-layout-hidden"))) {
+        selectedLayoutField = null;
+      }
+      if (selectedLayoutField && !selectedLayoutFields.has(selectedLayoutField)) {
+        selectedLayoutFields.add(selectedLayoutField);
+      }
+      if (!selectedLayoutField && selectedLayoutFields.size) {
+        const allFields = Array.from(selectedLayoutFields);
+        selectedLayoutField = allFields[allFields.length - 1] || null;
+      }
+      return Array.from(selectedLayoutFields);
+    }
+
+    function updateMultiSelectButton() {
+      const btn = document.getElementById("multiSelectBtn");
+      if (!btn) return;
+      const count = getSelectedLayoutFields().length;
+      btn.classList.toggle("is-active", multiLayoutSelectMode);
+      btn.innerHTML = multiLayoutSelectMode
+        ? `<span class="btn-icon">✓</span>Vários${count > 1 ? ` (${count})` : ""}`
+        : '<span class="btn-icon">□</span>Vários';
+    }
+
+    function describeLayoutSelection(fields = getSelectedLayoutFields()) {
+      if (fields.length > 1) {
+        return `${fields.length} campos selecionados. As setas, fonte, cor, negrito e ocultar afetam todos juntos.`;
+      }
+      if (!fields.length) {
+        return multiLayoutSelectMode
+          ? "Selecao multipla ligada. Toque nas caixas para adicionar ou remover."
+          : "Clique em um campo para selecionar.";
+      }
+      const el = fields[0];
+      return isAutoCalculatedLayoutField(el.id)
+        ? `Campo calculado: ${el.id}. Voce pode mover, ajustar fonte/cor e escrever texto depois do numero sem quebrar a conta.`
+        : `Campo selecionado: ${el.id}. Edite o texto, ajuste a fonte ou arraste para posicionar.`;
+    }
+
+    function setLayoutSelectionStatus() {
+      setLayoutStatus(describeLayoutSelection());
+    }
+
     function updateLayoutActionButtons() {
+      const selectedFields = getSelectedLayoutFields();
       const hideBtn = document.getElementById("hideFieldBtn");
       const textInput = document.getElementById("fieldTextInput");
       const fontSizeInput = document.getElementById("fontSizeInput");
@@ -4250,53 +4301,79 @@
         document.getElementById("moveFieldDownBtn"),
         document.getElementById("moveFieldRightBtn")
       ];
-      const fieldIsActive = Boolean(selectedLayoutField && !selectedLayoutField.classList.contains("is-layout-hidden"));
-      const textIsCalculated = fieldIsActive && isAutoCalculatedLayoutField(selectedLayoutField.id);
+      const fieldIsActive = selectedFields.length > 0;
+      const singleFieldActive = selectedFields.length === 1;
+      const primaryField = selectedLayoutField || selectedFields[0] || null;
+      const textIsCalculated = singleFieldActive && isAutoCalculatedLayoutField(primaryField.id);
       if (hideBtn) hideBtn.disabled = !fieldIsActive;
       if (textInput) {
-        textInput.disabled = !fieldIsActive;
-        textInput.value = fieldIsActive && textIsCalculated
-          ? (layoutPositions[selectedLayoutField.id]?.suffix || "")
-          : (fieldIsActive ? selectedLayoutField.textContent : "");
-        textInput.placeholder = textIsCalculated ? "Texto depois do numero, ex.: meses fixos" : "";
+        textInput.disabled = !singleFieldActive;
+        textInput.value = singleFieldActive && textIsCalculated
+          ? (layoutPositions[primaryField.id]?.suffix || "")
+          : (singleFieldActive ? primaryField.textContent : "");
+        textInput.placeholder = selectedFields.length > 1
+          ? "Selecione 1 caixa para editar o texto"
+          : (textIsCalculated ? "Texto depois do numero, ex.: meses fixos" : "");
       }
       if (fontSizeInput) {
         fontSizeInput.disabled = !fieldIsActive;
-        fontSizeInput.value = fieldIsActive ? String(Math.round(currentFieldFontSize(selectedLayoutField))) : "";
+        fontSizeInput.value = fieldIsActive && primaryField ? String(Math.round(currentFieldFontSize(primaryField))) : "";
       }
       if (fontBoldBtn) {
         fontBoldBtn.disabled = !fieldIsActive;
-        fontBoldBtn.classList.toggle("is-active", fieldIsActive && currentFieldBold(selectedLayoutField));
+        fontBoldBtn.classList.toggle("is-active", fieldIsActive && selectedFields.every(currentFieldBold));
       }
       if (colorInput) {
         colorInput.disabled = !fieldIsActive;
-        colorInput.value = fieldIsActive ? currentFieldColor(selectedLayoutField) : "#07194c";
+        colorInput.value = fieldIsActive && primaryField ? currentFieldColor(primaryField) : "#07194c";
       }
       if (moveStepInput) moveStepInput.disabled = !fieldIsActive;
-      [fontDownBtn, fontUpBtn, clearTextBtn, clearColorBtn, ...moveButtons].forEach((btn) => {
+      [fontDownBtn, fontUpBtn, clearColorBtn, ...moveButtons].forEach((btn) => {
         if (btn) btn.disabled = !fieldIsActive;
       });
+      if (clearTextBtn) clearTextBtn.disabled = !singleFieldActive;
+      updateMultiSelectButton();
     }
 
-    function selectLayoutField(el) {
-      if (!el || el.classList.contains("is-layout-hidden")) return;
-      if (selectedLayoutField && selectedLayoutField !== el) {
-        selectedLayoutField.classList.remove("is-layout-selected");
-      }
-      selectedLayoutField = el;
-      selectedLayoutField.classList.add("is-layout-selected");
-      updateLayoutActionButtons();
-      if (isAutoCalculatedLayoutField(el.id)) {
-        setLayoutStatus(`Campo calculado: ${el.id}. Voce pode mover, ajustar fonte/cor e escrever texto depois do numero sem quebrar a conta.`);
+    function selectLayoutField(el, options = {}) {
+      if (!el || el.classList.contains("is-layout-hidden")) return false;
+      const additive = Boolean(options.additive || multiLayoutSelectMode);
+      if (!additive) {
+        clearLayoutSelection(false);
+        selectedLayoutFields.add(el);
+        selectedLayoutField = el;
+      } else if (selectedLayoutFields.has(el)) {
+        selectedLayoutFields.delete(el);
+        el.classList.remove("is-layout-selected");
+        if (selectedLayoutField === el) {
+          const remaining = Array.from(selectedLayoutFields);
+          selectedLayoutField = remaining[remaining.length - 1] || null;
+        }
       } else {
-        setLayoutStatus(`Campo selecionado: ${el.id}. Edite o texto, ajuste a fonte ou arraste para posicionar.`);
+        selectedLayoutFields.add(el);
+        selectedLayoutField = el;
       }
+      document.querySelectorAll(".word-field.is-layout-selected").forEach((field) => {
+        if (!selectedLayoutFields.has(field)) field.classList.remove("is-layout-selected");
+      });
+      selectedLayoutFields.forEach((field) => field.classList.add("is-layout-selected"));
+      updateLayoutActionButtons();
+      setLayoutSelectionStatus();
+      return selectedLayoutFields.has(el);
     }
 
-    function clearLayoutSelection() {
+    function clearLayoutSelection(update = true) {
+      selectedLayoutFields.forEach((el) => el.classList.remove("is-layout-selected"));
       if (selectedLayoutField) selectedLayoutField.classList.remove("is-layout-selected");
+      selectedLayoutFields.clear();
       selectedLayoutField = null;
+      if (update) updateLayoutActionButtons();
+    }
+
+    function toggleMultiLayoutSelectMode() {
+      multiLayoutSelectMode = !multiLayoutSelectMode;
       updateLayoutActionButtons();
+      setLayoutSelectionStatus();
     }
 
     function compactLayoutEntry(id) {
@@ -4362,57 +4439,80 @@
       setLayoutStatus(`Texto automatico restaurado para ${id}.`);
     }
 
-    function setSelectedFieldFontSize(size) {
-      if (!selectedLayoutField) return;
-      const id = selectedLayoutField.id;
-      const requested = parseNumber(size);
-      const nextSize = Math.max(6, Math.min(72, requested || currentFieldFontSize(selectedLayoutField)));
+    function applyFieldFontSize(el, size) {
+      if (!el) return;
+      const id = el.id;
+      const nextSize = Math.max(6, Math.min(72, size));
       layoutPositions[id] = { ...(layoutPositions[id] || {}), fontSize: Number(nextSize.toFixed(1)) };
-      selectedLayoutField.style.fontSize = `${layoutPositions[id].fontSize}px`;
+      el.style.fontSize = `${layoutPositions[id].fontSize}px`;
+    }
+
+    function setSelectedFieldFontSize(size) {
+      const fields = getSelectedLayoutFields();
+      if (!fields.length) return;
+      const primaryField = selectedLayoutField || fields[0];
+      const requested = parseNumber(size);
+      const nextSize = Math.max(6, Math.min(72, requested || currentFieldFontSize(primaryField)));
+      fields.forEach((el) => applyFieldFontSize(el, nextSize));
       saveLayoutPositions();
       updateLayoutActionButtons();
-      setLayoutStatus(`Fonte ajustada para ${id}: ${layoutPositions[id].fontSize}px.`);
+      setLayoutStatus(fields.length > 1
+        ? `Fonte ajustada para ${fields.length} campos: ${Number(nextSize.toFixed(1))}px.`
+        : `Fonte ajustada para ${primaryField.id}: ${Number(nextSize.toFixed(1))}px.`);
     }
 
     function changeSelectedFieldFontSize(delta) {
-      if (!selectedLayoutField) return;
-      setSelectedFieldFontSize(currentFieldFontSize(selectedLayoutField) + delta);
+      const fields = getSelectedLayoutFields();
+      if (!fields.length) return;
+      fields.forEach((el) => applyFieldFontSize(el, currentFieldFontSize(el) + delta));
+      saveLayoutPositions();
+      updateLayoutActionButtons();
+      setLayoutStatus(fields.length > 1
+        ? `Fonte ajustada para ${fields.length} campos.`
+        : `Fonte ajustada para ${fields[0].id}: ${layoutPositions[fields[0].id].fontSize}px.`);
     }
 
     function toggleSelectedFieldBold() {
-      if (!selectedLayoutField) return;
-      const id = selectedLayoutField.id;
-      const nextBold = !currentFieldBold(selectedLayoutField);
-      layoutPositions[id] = { ...(layoutPositions[id] || {}), bold: nextBold };
-      selectedLayoutField.style.fontWeight = nextBold ? "700" : "400";
+      const fields = getSelectedLayoutFields();
+      if (!fields.length) return;
+      const nextBold = !fields.every(currentFieldBold);
+      fields.forEach((el) => {
+        layoutPositions[el.id] = { ...(layoutPositions[el.id] || {}), bold: nextBold };
+        el.style.fontWeight = nextBold ? "700" : "400";
+      });
       saveLayoutPositions();
       updateLayoutActionButtons();
-      setLayoutStatus(nextBold ? `Negrito ligado para ${id}.` : `Negrito desligado para ${id}.`);
+      setLayoutStatus(nextBold
+        ? `Negrito ligado para ${fields.length} campo(s).`
+        : `Negrito desligado para ${fields.length} campo(s).`);
     }
 
     function setSelectedFieldColor(color) {
-      if (!selectedLayoutField) return;
-      const id = selectedLayoutField.id;
+      const fields = getSelectedLayoutFields();
+      if (!fields.length) return;
       const nextColor = rgbToHex(color);
-      layoutPositions[id] = { ...(layoutPositions[id] || {}), color: nextColor };
-      selectedLayoutField.style.color = nextColor;
+      fields.forEach((el) => {
+        layoutPositions[el.id] = { ...(layoutPositions[el.id] || {}), color: nextColor };
+        el.style.color = nextColor;
+      });
       saveLayoutPositions();
       updateLayoutActionButtons();
-      setLayoutStatus(`Cor ajustada para ${id}: ${nextColor}.`);
+      setLayoutStatus(`Cor ajustada para ${fields.length} campo(s): ${nextColor}.`);
     }
 
     function clearSelectedFieldColor() {
-      if (!selectedLayoutField) return;
-      const id = selectedLayoutField.id;
-      if (layoutPositions[id]) {
-        delete layoutPositions[id].color;
-        compactLayoutEntry(id);
-      }
+      const fields = getSelectedLayoutFields();
+      if (!fields.length) return;
+      fields.forEach((el) => {
+        if (layoutPositions[el.id]) {
+          delete layoutPositions[el.id].color;
+          compactLayoutEntry(el.id);
+        }
+        el.style.removeProperty("color");
+      });
       saveLayoutPositions();
-      renderProposal();
-      const refreshed = document.getElementById(id);
-      if (refreshed) selectLayoutField(refreshed);
-      setLayoutStatus(`Cor automatica restaurada para ${id}.`);
+      updateLayoutActionButtons();
+      setLayoutStatus(`Cor automatica restaurada para ${fields.length} campo(s).`);
     }
 
     function currentMoveStep() {
@@ -4421,15 +4521,15 @@
       return Math.max(0.05, Math.min(5, step || 0.25));
     }
 
-    function nudgeSelectedLayoutField(deltaLeft, deltaTop) {
-      if (!selectedLayoutField) return;
-      const id = selectedLayoutField.id;
+    function nudgeLayoutField(el, deltaLeft, deltaTop) {
+      if (!el) return null;
+      const id = el.id;
       const currentLeft = Number.isFinite(layoutPositions[id]?.left)
         ? layoutPositions[id].left
-        : percentValue(selectedLayoutField.style.left);
+        : percentValue(el.style.left);
       const currentTop = Number.isFinite(layoutPositions[id]?.top)
         ? layoutPositions[id].top
-        : percentValue(selectedLayoutField.style.top);
+        : percentValue(el.style.top);
       const nextLeft = Math.max(0, Math.min(99.5, currentLeft + deltaLeft));
       const nextTop = Math.max(0, Math.min(99.5, currentTop + deltaTop));
       layoutPositions[id] = {
@@ -4437,10 +4537,22 @@
         left: Number(nextLeft.toFixed(2)),
         top: Number(nextTop.toFixed(2))
       };
-      selectedLayoutField.style.left = `${layoutPositions[id].left}%`;
-      selectedLayoutField.style.top = `${layoutPositions[id].top}%`;
+      el.style.left = `${layoutPositions[id].left}%`;
+      el.style.top = `${layoutPositions[id].top}%`;
+      return layoutPositions[id];
+    }
+
+    function nudgeSelectedLayoutField(deltaLeft, deltaTop) {
+      const fields = getSelectedLayoutFields();
+      if (!fields.length) return;
+      const moved = fields.map((el) => ({ el, position: nudgeLayoutField(el, deltaLeft, deltaTop) }));
       saveLayoutPositions();
-      setLayoutStatus(`Campo ${id}: esquerda ${layoutPositions[id].left}%, topo ${layoutPositions[id].top}%.`);
+      if (moved.length > 1) {
+        setLayoutStatus(`${moved.length} campos movidos.`);
+      } else {
+        const item = moved[0];
+        setLayoutStatus(`Campo ${item.el.id}: esquerda ${item.position.left}%, topo ${item.position.top}%.`);
+      }
     }
 
     function moveSelectedLayoutField(direction) {
@@ -4457,14 +4569,18 @@
     }
 
     function hideSelectedLayoutField() {
-      if (!selectedLayoutField) return;
-      const id = selectedLayoutField.id;
-      layoutPositions[id] = { ...(layoutPositions[id] || {}), hidden: true };
-      selectedLayoutField.classList.add("is-layout-hidden");
-      selectedLayoutField.classList.remove("is-layout-selected");
-      selectedLayoutField.setAttribute("aria-hidden", "true");
+      const fields = getSelectedLayoutFields();
+      if (!fields.length) return;
+      fields.forEach((el) => {
+        layoutPositions[el.id] = { ...(layoutPositions[el.id] || {}), hidden: true };
+        el.classList.add("is-layout-hidden");
+        el.classList.remove("is-layout-selected");
+        el.setAttribute("aria-hidden", "true");
+      });
       saveLayoutPositions();
-      setLayoutStatus(`Campo ocultado: ${id}. Ele tambem nao aparece no PDF.`);
+      setLayoutStatus(fields.length > 1
+        ? `${fields.length} campos ocultados. Eles tambem nao aparecem no PDF.`
+        : `Campo ocultado: ${fields[0].id}. Ele tambem nao aparece no PDF.`);
       clearLayoutSelection();
     }
 
@@ -4490,18 +4606,30 @@
         if (!document.body.classList.contains("layout-edit-mode")) return;
         const page = el.closest(".proposal-page");
         if (!page) return;
-        selectLayoutField(el);
+        const additive = multiLayoutSelectMode || event.ctrlKey || event.metaKey || event.shiftKey;
+        const wasSelected = selectedLayoutFields.has(el);
+        const selectedAfter = selectLayoutField(el, { additive });
+        if (additive && wasSelected && !selectedAfter) {
+          event.preventDefault();
+          return;
+        }
         const pageRect = page.getBoundingClientRect();
+        const selectedFields = getSelectedLayoutFields();
+        const dragFields = selectedFields.includes(el) ? selectedFields : [el];
         layoutDrag = {
           el,
+          fields: dragFields,
           pageRect,
           pointerId: event.pointerId,
           startX: event.clientX,
           startY: event.clientY,
-          startLeft: percentValue(el.style.left),
-          startTop: percentValue(el.style.top)
+          startPositions: dragFields.map((field) => ({
+            el: field,
+            startLeft: percentValue(field.style.left),
+            startTop: percentValue(field.style.top)
+          }))
         };
-        el.classList.add("is-dragging");
+        dragFields.forEach((field) => field.classList.add("is-dragging"));
         el.setPointerCapture(event.pointerId);
         event.preventDefault();
       });
@@ -4534,6 +4662,7 @@
           : '<span class="btn-icon">+</span>Ajustar layout';
       }
       if (layoutTools) layoutTools.hidden = !active;
+      multiLayoutSelectMode = false;
       if (active) {
         showStageView("proposal");
         renderProposal();
@@ -4560,29 +4689,37 @@
         if (!layoutDrag) return;
         const dx = ((event.clientX - layoutDrag.startX) / layoutDrag.pageRect.width) * 100;
         const dy = ((event.clientY - layoutDrag.startY) / layoutDrag.pageRect.height) * 100;
-        const left = clampPercent(layoutDrag.startLeft + dx);
-        const top = clampPercent(layoutDrag.startTop + dy);
-        layoutDrag.el.style.left = `${left.toFixed(2)}%`;
-        layoutDrag.el.style.top = `${top.toFixed(2)}%`;
-        setLayoutStatus(`Movendo ${layoutDrag.el.id}: esquerda ${left.toFixed(2)}%, topo ${top.toFixed(2)}%.`);
+        layoutDrag.startPositions.forEach((item) => {
+          const left = clampPercent(item.startLeft + dx);
+          const top = clampPercent(item.startTop + dy);
+          item.el.style.left = `${left.toFixed(2)}%`;
+          item.el.style.top = `${top.toFixed(2)}%`;
+        });
+        setLayoutStatus(layoutDrag.startPositions.length > 1
+          ? `Movendo ${layoutDrag.startPositions.length} campos.`
+          : `Movendo ${layoutDrag.el.id}: esquerda ${percentValue(layoutDrag.el.style.left).toFixed(2)}%, topo ${percentValue(layoutDrag.el.style.top).toFixed(2)}%.`);
       });
 
       document.addEventListener("pointerup", (event) => {
         if (!layoutDrag) return;
-        const { el, pointerId } = layoutDrag;
+        const { el, pointerId, startPositions } = layoutDrag;
         if (event.pointerId !== undefined && event.pointerId !== pointerId) return;
-        const left = Number(percentValue(el.style.left).toFixed(2));
-        const top = Number(percentValue(el.style.top).toFixed(2));
-        const width = percentValue(el.style.width, NaN);
-        layoutPositions[el.id] = {
-          ...(layoutPositions[el.id] || {}),
-          left,
-          top,
-          ...(Number.isFinite(width) ? { width: Number(width.toFixed(2)) } : {})
-        };
+        startPositions.forEach((item) => {
+          const left = Number(percentValue(item.el.style.left).toFixed(2));
+          const top = Number(percentValue(item.el.style.top).toFixed(2));
+          const width = percentValue(item.el.style.width, NaN);
+          layoutPositions[item.el.id] = {
+            ...(layoutPositions[item.el.id] || {}),
+            left,
+            top,
+            ...(Number.isFinite(width) ? { width: Number(width.toFixed(2)) } : {})
+          };
+          item.el.classList.remove("is-dragging");
+        });
         saveLayoutPositions();
-        el.classList.remove("is-dragging");
-        setLayoutStatus(`Posicao salva para ${el.id}: esquerda ${left.toFixed(2)}%, topo ${top.toFixed(2)}%.`);
+        setLayoutStatus(startPositions.length > 1
+          ? `Posicao salva para ${startPositions.length} campos.`
+          : `Posicao salva para ${el.id}: esquerda ${layoutPositions[el.id].left.toFixed(2)}%, topo ${layoutPositions[el.id].top.toFixed(2)}%.`);
         layoutDrag = null;
       });
     }
@@ -5145,6 +5282,7 @@
       });
       document.getElementById("themeToggleBtn").addEventListener("click", toggleThemePreference);
       document.getElementById("resetBtn").addEventListener("click", resetAll);
+      document.getElementById("multiSelectBtn").addEventListener("click", toggleMultiLayoutSelectMode);
       document.getElementById("hideFieldBtn").addEventListener("click", hideSelectedLayoutField);
       document.getElementById("showAllFieldsBtn").addEventListener("click", showAllLayoutFields);
       document.getElementById("resetLayoutBtn").addEventListener("click", resetLayoutPositions);
@@ -5161,7 +5299,7 @@
       document.getElementById("moveFieldDownBtn").addEventListener("click", () => moveSelectedLayoutField("down"));
       document.getElementById("moveFieldRightBtn").addEventListener("click", () => moveSelectedLayoutField("right"));
       window.addEventListener("keydown", (event) => {
-        if (!document.body.classList.contains("layout-edit-mode") || !selectedLayoutField) return;
+        if (!document.body.classList.contains("layout-edit-mode") || !getSelectedLayoutFields().length) return;
         const target = event.target instanceof Element ? event.target : null;
         if (target && target.closest("input, textarea, select, button, [contenteditable='true']")) return;
         const directionByKey = {

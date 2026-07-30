@@ -356,7 +356,7 @@ body.mobile-preview-mode .layout-color-controls input[type="color"] {
 
 body.mobile-preview-mode .layout-actions {
   display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
+  grid-template-columns: repeat(2, minmax(0, 1fr));
   justify-content: stretch;
   width: 100%;
   gap: 6px;
