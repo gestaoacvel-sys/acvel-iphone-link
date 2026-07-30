@@ -230,6 +230,24 @@ body.mobile-preview-mode .layout-tools {
   padding: 10px;
 }
 
+body.mobile-preview-mode.layout-edit-mode .workspace {
+  padding-bottom: calc(46vh + max(18px, env(safe-area-inset-bottom)));
+}
+
+body.mobile-preview-mode.layout-edit-mode .layout-tools {
+  position: fixed;
+  right: max(10px, env(safe-area-inset-right));
+  bottom: max(8px, env(safe-area-inset-bottom));
+  left: max(10px, env(safe-area-inset-left));
+  z-index: 32;
+  width: auto;
+  max-height: min(42vh, 360px);
+  overflow-y: auto;
+  border-radius: 12px;
+  box-shadow: 0 -12px 34px rgba(6, 25, 76, .2);
+  -webkit-overflow-scrolling: touch;
+}
+
 body.mobile-preview-mode .layout-tools > div:first-child {
   min-width: 0;
 }
