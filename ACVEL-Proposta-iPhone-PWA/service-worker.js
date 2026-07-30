@@ -1,4 +1,4 @@
-const CACHE_NAME = "acvel-proposta-v1";
+const CACHE_NAME = "acvel-proposta-v2";
 const APP_SHELL = [
   "./",
   "./index.html",

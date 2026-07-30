@@ -3860,7 +3860,12 @@
     }
 
     function isMobilePreviewMode() {
-      return new URLSearchParams(window.location.search).has("mobilePreview") || isCapacitorNativeApp();
+      const params = new URLSearchParams(window.location.search);
+      if (params.has("mobilePreview") || isCapacitorNativeApp()) return true;
+      const userAgent = navigator.userAgent || "";
+      const isiOS = /iPad|iPhone|iPod/i.test(userAgent) || (navigator.platform === "MacIntel" && navigator.maxTouchPoints > 1);
+      const isTouchPhone = navigator.maxTouchPoints > 0 && window.matchMedia("(max-width: 920px)").matches;
+      return isiOS || isTouchPhone;
     }
 
     function applyPreviewScaleVars() {
@@ -4860,6 +4865,39 @@
       setTimeout(() => URL.revokeObjectURL(url), 1500);
     }
 
+    async function deliverPdfBlob(blob, filename) {
+      const isPdf = blob.type === "application/pdf" || !blob.type;
+      if (isPdf && typeof File === "function" && navigator.share) {
+        const file = new File([blob], filename, { type: "application/pdf" });
+        if (!navigator.canShare || navigator.canShare({ files: [file] })) {
+          try {
+            await navigator.share({
+              title: filename,
+              text: "Proposta ACVEL",
+              files: [file]
+            });
+            setText("statusbar", `PDF pronto para salvar: ${filename}`);
+            return true;
+          } catch (error) {
+            if (error && error.name === "AbortError") return true;
+            console.warn("Compartilhamento nativo indisponivel.", error);
+          }
+        }
+      }
+
+      const url = URL.createObjectURL(blob);
+      const opened = window.open(url, "_blank", "noopener,noreferrer");
+      if (opened) {
+        setText("statusbar", "PDF aberto em nova aba. No iPhone, toque em Compartilhar > Salvar em Arquivos.");
+        setTimeout(() => URL.revokeObjectURL(url), 60000);
+        return true;
+      }
+      URL.revokeObjectURL(url);
+      downloadPdfBlob(blob, filename);
+      setText("statusbar", `PDF gerado: ${filename}`);
+      return true;
+    }
+
     async function savePdfWithMobileEngine() {
       if (!window.html2canvas || !window.jspdf?.jsPDF) return false;
       const pages = proposalPagesForPdf();
@@ -4911,8 +4949,7 @@
           return true;
         }
 
-        downloadPdfBlob(pdf.output("blob"), filename);
-        setText("statusbar", `PDF gerado para teste: ${filename}`);
+        await deliverPdfBlob(pdf.output("blob"), filename);
         return true;
       } finally {
         document.body.classList.remove("pdf-render-mode");
