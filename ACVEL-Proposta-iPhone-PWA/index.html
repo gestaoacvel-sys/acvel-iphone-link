@@ -917,6 +917,7 @@
       position: absolute;
       display: block;
       color: var(--navy-2);
+      font-size: 10px;
       font-weight: 900;
       line-height: 1.05;
       white-space: nowrap;
@@ -982,28 +983,28 @@
     }
 
     .word-cover-money {
-      font-size: 6.8mm;
+      font-size: 10px;
     }
 
     .word-cover-small {
-      font-size: 3.5mm;
+      font-size: 10px;
     }
 
     .word-cover-value {
-      font-size: 4.4mm;
+      font-size: 10px;
     }
 
     .word-page2-metric {
-      font-size: 4.1mm;
+      font-size: 10px;
     }
 
     .word-page2-cell {
-      font-size: 3.55mm;
+      font-size: 10px;
       text-align: center;
     }
 
     .word-page2-total {
-      font-size: 4.6mm;
+      font-size: 10px;
       text-align: center;
     }
 
@@ -1011,7 +1012,7 @@
       z-index: 3;
       padding: 0;
       background: transparent;
-      font-size: 4.1mm;
+      font-size: 10px;
       font-weight: 700;
     }
 
@@ -1021,7 +1022,7 @@
       padding: 1.2mm 1.6mm;
       border-radius: 4px;
       background: rgba(255, 255, 255, .9);
-      font-size: 2.55mm;
+      font-size: 10px;
       font-weight: 760;
     }
 
@@ -1029,7 +1030,7 @@
       white-space: normal;
       line-height: 1.18;
       min-height: 4mm;
-      font-size: 3.3mm;
+      font-size: 10px;
       font-weight: 700;
     }
 
@@ -2655,6 +2656,7 @@
   <script>
     const STORAGE_KEY = "acvel.proposal.generator.v1";
     const LAYOUT_STORAGE_KEY = "acvel.proposal.layout.v1";
+    const LAYOUT_FONT_DEFAULT_VERSION = 2;
     const THEME_STORAGE_KEY = "acvel.proposal.theme.v1";
     const PANEL_WIDTH_STORAGE_KEY = "acvel.proposal.panelWidth.v1";
     const TARIFF_CACHE_KEY = "acvel.tariff.database.github.v1";
@@ -4120,6 +4122,18 @@
           saved._termTemplateLayoutVersion = TERM_TEMPLATE_LAYOUT_VERSION;
           changed = true;
         }
+        if (saved._fontDefaultVersion !== LAYOUT_FONT_DEFAULT_VERSION) {
+          Object.keys(saved).forEach((id) => {
+            const entry = saved[id];
+            if (!entry || typeof entry !== "object") return;
+            if (Number.isFinite(entry.fontSize)) {
+              entry.fontSize = 10;
+              changed = true;
+            }
+          });
+          saved._fontDefaultVersion = LAYOUT_FONT_DEFAULT_VERSION;
+          changed = true;
+        }
         Object.keys(saved).forEach((id) => {
           if (!isAutoCalculatedLayoutField(id)) return;
           if (!saved[id] || typeof saved[id] !== "object") return;
@@ -4578,8 +4592,8 @@
         <span class="word-field word-contract-value" id="wContractCityDate" style="left:9.8%; top:73.6%;"></span>
         <span class="word-field word-extra-text" id="wContractExtraText1" style="left:9.5%; top:79.1%; width:36%;"></span>
         <span class="word-field word-extra-text" id="wContractExtraText2" style="left:52%; top:79.1%; width:36%;"></span>
-        <span class="word-field" id="wSignatureName" style="left:64%; top:86%; width:24%; text-align:center; font-size:4.5mm;"></span>
-        <span class="word-field normal" id="wSignatureCnpj" style="left:66.6%; top:85%; width:24%; text-align:left; font-size:3.8mm;"></span>
+        <span class="word-field" id="wSignatureName" style="left:64%; top:86%; width:24%; text-align:center; font-size:10px;"></span>
+        <span class="word-field normal" id="wSignatureCnpj" style="left:66.6%; top:85%; width:24%; text-align:left; font-size:10px;"></span>
       `);
     }
 
