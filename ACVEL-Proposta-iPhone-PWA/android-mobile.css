@@ -1,0 +1,356 @@
+:root {
+  --mobile-panel-gap: 14px;
+  --mobile-preview-scale: 1;
+}
+
+body {
+  min-width: 0;
+  -webkit-font-smoothing: auto;
+  overscroll-behavior-y: auto;
+  text-rendering: optimizeLegibility;
+  -webkit-text-size-adjust: 100%;
+}
+
+.topbar {
+  padding-top: max(10px, env(safe-area-inset-top));
+  padding-left: 14px;
+  padding-right: 14px;
+  padding-bottom: 10px;
+  align-items: stretch;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.workspace {
+  grid-template-columns: 1fr;
+  gap: var(--mobile-panel-gap);
+  padding: calc(var(--topbar-height) + 12px) 12px 12px;
+}
+
+.control-panel {
+  position: relative;
+  top: 0;
+  max-height: none;
+  box-shadow: none;
+  font-family: "Segoe UI", Roboto, Arial, sans-serif;
+  font-size: 15px;
+  transform: none !important;
+  zoom: 1 !important;
+  filter: none !important;
+  -webkit-font-smoothing: auto;
+}
+
+.control-panel *,
+.control-panel input,
+.control-panel select,
+.control-panel textarea,
+.control-panel button {
+  text-shadow: none !important;
+  -webkit-font-smoothing: auto;
+}
+
+.control-panel .form-section h2,
+.control-panel summary {
+  font-size: 18px;
+  font-weight: 750;
+}
+
+.control-panel label {
+  font-size: 13px;
+  font-weight: 700;
+  line-height: 1.25;
+}
+
+.control-panel input,
+.control-panel select,
+.control-panel textarea {
+  min-height: 44px;
+  font-size: 15px;
+  font-weight: 600;
+  line-height: 1.25;
+}
+
+.control-panel textarea {
+  min-height: 86px;
+}
+
+.field-grid,
+.field-grid.one,
+.check-grid,
+.check-grid.one,
+.kpi-grid {
+  grid-template-columns: 1fr;
+}
+
+.panel-resizer {
+  display: none;
+}
+
+.month-toolbar {
+  display: grid;
+  grid-template-columns: 1fr;
+}
+
+.month-toolbar .btn {
+  width: 100%;
+}
+
+.month-table-wrap {
+  overflow: visible;
+  border: 0;
+}
+
+.month-table {
+  display: block;
+  width: 100%;
+  min-width: 0;
+  background: transparent;
+  border-collapse: separate;
+  font-size: 14px;
+}
+
+.month-table thead {
+  display: none;
+}
+
+.month-table tbody {
+  display: block;
+}
+
+.month-table tr {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 10px;
+  padding: 12px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  background: #fff;
+}
+
+.month-table tr:not(:first-child) {
+  display: none;
+}
+
+.month-table td {
+  display: grid;
+  gap: 5px;
+  padding: 0;
+  border: 0;
+}
+
+.month-table td::before {
+  content: attr(data-label);
+  color: #20345f;
+  font-size: 13px;
+  font-weight: 700;
+  line-height: 1.25;
+}
+
+.month-table td:first-child {
+  padding-bottom: 2px;
+}
+
+.month-table td:first-child strong {
+  font-size: 16px;
+}
+
+.month-table input,
+.month-table select {
+  width: 100% !important;
+  min-height: 44px;
+  font-size: 15px;
+  font-weight: 600;
+}
+
+.month-table td:has(input:disabled),
+.month-table td:has(select:disabled) {
+  display: none;
+}
+
+.actions {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  width: 100%;
+  gap: 7px;
+  overflow: visible;
+  padding-bottom: 0;
+}
+
+.actions .btn {
+  width: 100%;
+  min-width: 0;
+  min-height: 36px;
+  padding: 6px 8px;
+  font-size: 13px;
+  white-space: nowrap;
+}
+
+.proposal-stage {
+  overflow-x: hidden;
+  align-items: center;
+  -webkit-overflow-scrolling: touch;
+  overscroll-behavior-y: auto;
+  touch-action: pan-y;
+}
+
+.statusbar,
+.view-tabs,
+.layout-tools,
+.proposal-page,
+.profit-report-panel {
+  flex: 0 0 auto;
+}
+
+body.mobile-preview-mode .proposal-stage {
+  align-items: center;
+  overflow-x: hidden;
+  overflow-y: visible;
+  overscroll-behavior-x: none;
+  overscroll-behavior-y: auto;
+  touch-action: pan-y;
+}
+
+body.mobile-preview-mode .statusbar,
+body.mobile-preview-mode .view-tabs,
+body.mobile-preview-mode .layout-tools {
+  width: 100%;
+}
+
+body.mobile-preview-mode .layout-tools {
+  align-items: stretch;
+  gap: 8px;
+  padding: 10px;
+}
+
+body.mobile-preview-mode .layout-tools > div:first-child {
+  min-width: 0;
+}
+
+body.mobile-preview-mode .layout-tools strong {
+  font-size: 12px;
+}
+
+body.mobile-preview-mode .layout-tools span {
+  max-height: 2.5em;
+  overflow: hidden;
+  font-size: 10.5px;
+  line-height: 1.25;
+}
+
+body.mobile-preview-mode .layout-editor {
+  width: 100%;
+  min-width: 0;
+  flex: 0 1 auto;
+  grid-template-columns: 1fr;
+  align-items: stretch;
+  gap: 7px;
+}
+
+body.mobile-preview-mode .layout-editor label {
+  min-width: 0;
+  width: 100%;
+}
+
+body.mobile-preview-mode .layout-editor textarea {
+  height: 38px;
+  min-height: 38px;
+  max-height: 76px;
+}
+
+body.mobile-preview-mode .layout-font-controls {
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  width: 100%;
+  gap: 6px;
+}
+
+body.mobile-preview-mode .layout-color-controls {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1.2fr);
+  align-items: end;
+  width: 100%;
+  gap: 6px;
+}
+
+body.mobile-preview-mode .layout-font-controls .btn,
+body.mobile-preview-mode .layout-color-controls .btn,
+body.mobile-preview-mode .layout-actions .btn {
+  width: 100%;
+  min-width: 0;
+  min-height: 34px;
+  padding: 6px 7px;
+  overflow: hidden;
+  font-size: 12px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+body.mobile-preview-mode .layout-font-controls input,
+body.mobile-preview-mode .layout-color-controls input[type="color"] {
+  width: 100%;
+  min-width: 0;
+  min-height: 34px;
+}
+
+body.mobile-preview-mode .layout-actions {
+  display: grid;
+  grid-template-columns: 1fr;
+  justify-content: stretch;
+  width: 100%;
+  gap: 6px;
+}
+
+body.mobile-preview-mode .proposal-page {
+  width: 210mm !important;
+  height: 297mm !important;
+  min-height: 0 !important;
+  zoom: var(--mobile-preview-scale) !important;
+  touch-action: pan-y;
+}
+
+body.mobile-preview-mode .profit-report-panel {
+  width: 100% !important;
+  zoom: 1 !important;
+  touch-action: pan-y;
+}
+
+body.pdf-render-mode .proposal-page,
+body.pdf-render-mode .profit-report-panel {
+  zoom: 1 !important;
+}
+
+@media (max-width: 720px) {
+  .topbar {
+    align-items: stretch;
+  }
+
+  .brand-lockup img {
+    width: 96px;
+  }
+
+  .brand-lockup strong {
+    font-size: 14px;
+  }
+
+  .form-grid.two,
+  .form-grid.three,
+  .report-kpi-grid,
+  .report-meta {
+    grid-template-columns: 1fr;
+  }
+
+  .month-table-wrap,
+  .report-table-wrap {
+    overflow-x: auto;
+  }
+
+  .proposal-page {
+    transform-origin: top left;
+  }
+}
+
+@media print {
+  body.mobile-preview-mode .proposal-page {
+    zoom: 1 !important;
+  }
+}
