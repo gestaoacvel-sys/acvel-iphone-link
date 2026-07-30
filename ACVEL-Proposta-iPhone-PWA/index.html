@@ -516,7 +516,7 @@
 
     .layout-editor {
       display: grid;
-      grid-template-columns: minmax(260px, 1fr) auto auto;
+      grid-template-columns: minmax(260px, 1fr) auto auto auto;
       align-items: end;
       gap: 8px;
       flex: 1 1 360px;
@@ -554,6 +554,40 @@
       width: 62px;
       text-align: center;
     }
+
+    .layout-move-controls {
+      display: grid;
+      grid-template-columns: minmax(74px, auto) auto;
+      align-items: end;
+      gap: 6px;
+    }
+
+    .layout-move-controls select {
+      width: 84px;
+      min-height: 34px;
+      background: #fff;
+    }
+
+    .layout-move-pad {
+      display: grid;
+      grid-template-columns: repeat(3, 34px);
+      grid-template-areas:
+        ". up ."
+        "left down right";
+      gap: 4px;
+    }
+
+    .layout-move-pad .btn {
+      width: 34px;
+      min-width: 34px;
+      min-height: 34px;
+      padding: 0;
+    }
+
+    #moveFieldUpBtn { grid-area: up; }
+    #moveFieldLeftBtn { grid-area: left; }
+    #moveFieldDownBtn { grid-area: down; }
+    #moveFieldRightBtn { grid-area: right; }
 
     .layout-color-controls input[type="color"] {
       width: 44px;
@@ -2273,6 +2307,21 @@
             <button class="btn" type="button" id="fontUpBtn" disabled><span class="btn-icon">A+</span></button>
             <button class="btn" type="button" id="fontBoldBtn" disabled><span class="btn-icon">B</span></button>
             <button class="btn" type="button" id="clearFieldTextBtn" disabled>Auto</button>
+          </div>
+          <div class="layout-move-controls" aria-label="Mover campo selecionado">
+            <label>Passo
+              <select id="moveStepInput" disabled>
+                <option value="0.1">0,1%</option>
+                <option value="0.25" selected>0,25%</option>
+                <option value="1">1%</option>
+              </select>
+            </label>
+            <div class="layout-move-pad">
+              <button class="btn" type="button" id="moveFieldUpBtn" disabled title="Subir" aria-label="Subir campo"><span class="btn-icon">↑</span></button>
+              <button class="btn" type="button" id="moveFieldLeftBtn" disabled title="Mover para esquerda" aria-label="Mover campo para esquerda"><span class="btn-icon">←</span></button>
+              <button class="btn" type="button" id="moveFieldDownBtn" disabled title="Descer" aria-label="Descer campo"><span class="btn-icon">↓</span></button>
+              <button class="btn" type="button" id="moveFieldRightBtn" disabled title="Mover para direita" aria-label="Mover campo para direita"><span class="btn-icon">→</span></button>
+            </div>
           </div>
           <div class="layout-color-controls" aria-label="Cor da letra">
             <label>Cor
@@ -4194,6 +4243,13 @@
       const clearTextBtn = document.getElementById("clearFieldTextBtn");
       const colorInput = document.getElementById("fieldColorInput");
       const clearColorBtn = document.getElementById("clearFieldColorBtn");
+      const moveStepInput = document.getElementById("moveStepInput");
+      const moveButtons = [
+        document.getElementById("moveFieldUpBtn"),
+        document.getElementById("moveFieldLeftBtn"),
+        document.getElementById("moveFieldDownBtn"),
+        document.getElementById("moveFieldRightBtn")
+      ];
       const fieldIsActive = Boolean(selectedLayoutField && !selectedLayoutField.classList.contains("is-layout-hidden"));
       const textIsCalculated = fieldIsActive && isAutoCalculatedLayoutField(selectedLayoutField.id);
       if (hideBtn) hideBtn.disabled = !fieldIsActive;
@@ -4216,7 +4272,8 @@
         colorInput.disabled = !fieldIsActive;
         colorInput.value = fieldIsActive ? currentFieldColor(selectedLayoutField) : "#07194c";
       }
-      [fontDownBtn, fontUpBtn, clearTextBtn, clearColorBtn].forEach((btn) => {
+      if (moveStepInput) moveStepInput.disabled = !fieldIsActive;
+      [fontDownBtn, fontUpBtn, clearTextBtn, clearColorBtn, ...moveButtons].forEach((btn) => {
         if (btn) btn.disabled = !fieldIsActive;
       });
     }
@@ -4354,6 +4411,47 @@
       const refreshed = document.getElementById(id);
       if (refreshed) selectLayoutField(refreshed);
       setLayoutStatus(`Cor automatica restaurada para ${id}.`);
+    }
+
+    function currentMoveStep() {
+      const input = document.getElementById("moveStepInput");
+      const step = parseNumber(input ? input.value : 0.25);
+      return Math.max(0.05, Math.min(5, step || 0.25));
+    }
+
+    function nudgeSelectedLayoutField(deltaLeft, deltaTop) {
+      if (!selectedLayoutField) return;
+      const id = selectedLayoutField.id;
+      const currentLeft = Number.isFinite(layoutPositions[id]?.left)
+        ? layoutPositions[id].left
+        : percentValue(selectedLayoutField.style.left);
+      const currentTop = Number.isFinite(layoutPositions[id]?.top)
+        ? layoutPositions[id].top
+        : percentValue(selectedLayoutField.style.top);
+      const nextLeft = Math.max(0, Math.min(99.5, currentLeft + deltaLeft));
+      const nextTop = Math.max(0, Math.min(99.5, currentTop + deltaTop));
+      layoutPositions[id] = {
+        ...(layoutPositions[id] || {}),
+        left: Number(nextLeft.toFixed(2)),
+        top: Number(nextTop.toFixed(2))
+      };
+      selectedLayoutField.style.left = `${layoutPositions[id].left}%`;
+      selectedLayoutField.style.top = `${layoutPositions[id].top}%`;
+      saveLayoutPositions();
+      setLayoutStatus(`Campo ${id}: esquerda ${layoutPositions[id].left}%, topo ${layoutPositions[id].top}%.`);
+    }
+
+    function moveSelectedLayoutField(direction) {
+      const step = currentMoveStep();
+      const moves = {
+        up: [0, -step],
+        down: [0, step],
+        left: [-step, 0],
+        right: [step, 0]
+      };
+      const move = moves[direction];
+      if (!move) return;
+      nudgeSelectedLayoutField(move[0], move[1]);
     }
 
     function hideSelectedLayoutField() {
@@ -5056,6 +5154,33 @@
       document.getElementById("fontSizeInput").addEventListener("change", (event) => setSelectedFieldFontSize(event.target.value));
       document.getElementById("fieldColorInput").addEventListener("input", (event) => setSelectedFieldColor(event.target.value));
       document.getElementById("clearFieldColorBtn").addEventListener("click", clearSelectedFieldColor);
+      document.getElementById("moveFieldUpBtn").addEventListener("click", () => moveSelectedLayoutField("up"));
+      document.getElementById("moveFieldLeftBtn").addEventListener("click", () => moveSelectedLayoutField("left"));
+      document.getElementById("moveFieldDownBtn").addEventListener("click", () => moveSelectedLayoutField("down"));
+      document.getElementById("moveFieldRightBtn").addEventListener("click", () => moveSelectedLayoutField("right"));
+      window.addEventListener("keydown", (event) => {
+        if (!document.body.classList.contains("layout-edit-mode") || !selectedLayoutField) return;
+        const target = event.target instanceof Element ? event.target : null;
+        if (target && target.closest("input, textarea, select, button, [contenteditable='true']")) return;
+        const directionByKey = {
+          ArrowUp: "up",
+          ArrowDown: "down",
+          ArrowLeft: "left",
+          ArrowRight: "right"
+        };
+        const direction = directionByKey[event.key];
+        if (!direction) return;
+        event.preventDefault();
+        const multiplier = event.shiftKey ? 4 : (event.altKey ? 0.4 : 1);
+        const step = currentMoveStep() * multiplier;
+        const moves = {
+          up: [0, -step],
+          down: [0, step],
+          left: [-step, 0],
+          right: [step, 0]
+        };
+        nudgeSelectedLayoutField(moves[direction][0], moves[direction][1]);
+      }, true);
       document.getElementById("replicateBtn").addEventListener("click", replicateJanuary);
       document.getElementById("clearMonthsBtn").addEventListener("click", clearMonths);
       TARIFF_FILTERS.forEach(({ id }) => {

@@ -272,6 +272,25 @@ body.mobile-preview-mode .layout-font-controls {
   gap: 6px;
 }
 
+body.mobile-preview-mode .layout-move-controls {
+  grid-template-columns: minmax(0, 1fr);
+  width: 100%;
+}
+
+body.mobile-preview-mode .layout-move-controls select {
+  width: 100%;
+}
+
+body.mobile-preview-mode .layout-move-pad {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+body.mobile-preview-mode .layout-move-pad .btn {
+  width: 100%;
+  min-width: 0;
+  min-height: 40px;
+}
+
 body.mobile-preview-mode .layout-color-controls {
   display: grid;
   grid-template-columns: minmax(0, 1fr) minmax(0, 1.2fr);
@@ -281,6 +300,7 @@ body.mobile-preview-mode .layout-color-controls {
 }
 
 body.mobile-preview-mode .layout-font-controls .btn,
+body.mobile-preview-mode .layout-move-controls .btn,
 body.mobile-preview-mode .layout-color-controls .btn,
 body.mobile-preview-mode .layout-actions .btn {
   width: 100%;
