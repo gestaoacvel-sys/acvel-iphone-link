@@ -1,4 +1,4 @@
-const CACHE_NAME = "acvel-proposta-v8";
+const CACHE_NAME = "acvel-proposta-v9";
 const APP_SHELL = [
   "./",
   "./index.html",
@@ -26,6 +26,21 @@ self.addEventListener("activate", (event) => {
 
 self.addEventListener("fetch", (event) => {
   if (event.request.method !== "GET") return;
+  const acceptHeader = event.request.headers.get("accept") || "";
+  const isPageRequest = event.request.mode === "navigate" || acceptHeader.includes("text/html");
+  if (isPageRequest) {
+    event.respondWith(
+      fetch(event.request).then((response) => {
+        const copy = response.clone();
+        caches.open(CACHE_NAME).then((cache) => {
+          cache.put(event.request, copy.clone());
+          cache.put("./index.html", copy);
+        });
+        return response;
+      }).catch(() => caches.match(event.request).then((cached) => cached || caches.match("./index.html")))
+    );
+    return;
+  }
   event.respondWith(
     caches.match(event.request).then((cached) => {
       if (cached) return cached;

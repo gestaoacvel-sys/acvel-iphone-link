@@ -5350,7 +5350,7 @@
 
     if ("serviceWorker" in navigator && location.protocol !== "file:") {
       window.addEventListener("load", () => {
-        navigator.serviceWorker.register("./service-worker.js").catch((error) => {
+        navigator.serviceWorker.register("./service-worker.js?v=9").catch((error) => {
           console.warn("Service worker nao registrado.", error);
         });
       });
