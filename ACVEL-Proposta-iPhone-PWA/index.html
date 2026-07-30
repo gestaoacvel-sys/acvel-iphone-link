@@ -3894,59 +3894,13 @@
     function setupMobilePreviewMode() {
       if (!isMobilePreviewMode()) return;
       document.body.classList.add("mobile-preview-mode");
-      setupMobileStageTouchScroll();
       window.addEventListener("resize", fitMobilePreview);
       window.addEventListener("orientationchange", () => setTimeout(fitMobilePreview, 250));
       requestAnimationFrame(fitMobilePreview);
     }
 
     function setupMobileStageTouchScroll() {
-      if (document.documentElement.dataset.stageTouchScrollBound === "1") return;
-      document.documentElement.dataset.stageTouchScrollBound = "1";
-
-      let isTouchScrollingStage = false;
-      let lastTouchY = 0;
-      let lastTouchX = 0;
-
-      const canProxyStageTouch = (target) => {
-        if (!isMobilePreviewMode()) return false;
-        if (document.body.classList.contains("layout-edit-mode")) return false;
-        const element = target instanceof Element ? target : null;
-        if (!element || !element.closest(".proposal-stage")) return false;
-        return !element.closest("button, input, textarea, select, a, [contenteditable='true']");
-      };
-
-      window.addEventListener("touchstart", (event) => {
-        if (event.touches.length !== 1 || !canProxyStageTouch(event.target)) {
-          isTouchScrollingStage = false;
-          return;
-        }
-        const touch = event.touches[0];
-        isTouchScrollingStage = true;
-        lastTouchY = touch.clientY;
-        lastTouchX = touch.clientX;
-      }, { passive: true, capture: true });
-
-      window.addEventListener("touchmove", (event) => {
-        if (!isTouchScrollingStage || event.touches.length !== 1) return;
-        const touch = event.touches[0];
-        const deltaY = lastTouchY - touch.clientY;
-        const deltaX = touch.clientX - lastTouchX;
-        lastTouchY = touch.clientY;
-        lastTouchX = touch.clientX;
-
-        if (Math.abs(deltaY) < 1 || Math.abs(deltaY) < Math.abs(deltaX)) return;
-        window.scrollBy({ top: deltaY, left: 0, behavior: "auto" });
-        event.preventDefault();
-      }, { passive: false, capture: true });
-
-      window.addEventListener("touchend", () => {
-        isTouchScrollingStage = false;
-      }, { passive: true, capture: true });
-
-      window.addEventListener("touchcancel", () => {
-        isTouchScrollingStage = false;
-      }, { passive: true, capture: true });
+      // Mobile browsers scroll the document more smoothly than a manual touch proxy.
     }
 
     function applyPreviewZoom(value) {
@@ -3971,7 +3925,7 @@
     function scrollStageIntoView() {
       const stage = document.querySelector(".proposal-stage");
       if (!stage) return;
-      stage.scrollIntoView({ behavior: "smooth", block: "start", inline: "nearest" });
+      stage.scrollIntoView({ behavior: isMobilePreviewMode() ? "auto" : "smooth", block: "start", inline: "nearest" });
       requestAnimationFrame(resetPreviewHorizontalScroll);
       setTimeout(resetPreviewHorizontalScroll, 260);
     }

@@ -213,6 +213,7 @@ body.mobile-preview-mode .proposal-stage {
   overflow-y: visible;
   overscroll-behavior-x: auto;
   overscroll-behavior-y: auto;
+  -webkit-overflow-scrolling: touch;
   padding-inline: 10px;
   touch-action: pan-x pan-y;
 }
@@ -315,6 +316,10 @@ body.mobile-preview-mode .proposal-page {
   flex: 0 0 auto;
   zoom: var(--mobile-preview-scale) !important;
   transform-origin: top left;
+  box-shadow: none !important;
+  contain: layout paint style;
+  content-visibility: auto;
+  contain-intrinsic-size: 794px 1123px;
   touch-action: pan-x pan-y;
 }
 
@@ -327,6 +332,8 @@ body.mobile-preview-mode .profit-report-panel {
 body.pdf-render-mode .proposal-page,
 body.pdf-render-mode .profit-report-panel {
   zoom: 1 !important;
+  contain: none !important;
+  content-visibility: visible !important;
 }
 
 body.mobile-preview-mode .proposal-page h1,
