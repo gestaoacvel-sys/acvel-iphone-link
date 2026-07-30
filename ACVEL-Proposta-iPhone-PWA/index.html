@@ -2306,6 +2306,7 @@
             <input id="fontSizeInput" inputmode="decimal" disabled aria-label="Fonte em pixels">
             <button class="btn" type="button" id="fontUpBtn" disabled><span class="btn-icon">A+</span></button>
             <button class="btn" type="button" id="fontBoldBtn" disabled><span class="btn-icon">B</span></button>
+            <button class="btn" type="button" id="multiSelectBtn"><span class="btn-icon">□</span>Vários</button>
             <button class="btn" type="button" id="clearFieldTextBtn" disabled>Auto</button>
           </div>
           <div class="layout-move-controls" aria-label="Mover campo selecionado">
@@ -2331,7 +2332,6 @@
           </div>
         </div>
         <div class="layout-actions">
-          <button class="btn" type="button" id="multiSelectBtn"><span class="btn-icon">□</span>Vários</button>
           <button class="btn" type="button" id="hideFieldBtn" disabled><span class="btn-icon">-</span>Ocultar campo</button>
           <button class="btn" type="button" id="showAllFieldsBtn"><span class="btn-icon">+</span>Mostrar todos</button>
           <button class="btn" type="button" id="resetLayoutBtn"><span class="btn-icon">R</span>Restaurar padrao</button>
@@ -5350,7 +5350,7 @@
 
     if ("serviceWorker" in navigator && location.protocol !== "file:") {
       window.addEventListener("load", () => {
-        navigator.serviceWorker.register("./service-worker.js?v=9").catch((error) => {
+        navigator.serviceWorker.register("./service-worker.js?v=10").catch((error) => {
           console.warn("Service worker nao registrado.", error);
         });
       });
