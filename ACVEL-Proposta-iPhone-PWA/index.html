@@ -2033,7 +2033,7 @@
       margin: 0;
     }
   </style>
-  <link rel="stylesheet" href="android-mobile.css">
+  <link rel="stylesheet" href="android-mobile.css?v=15">
   <script src="vendor/html2canvas.min.js"></script>
   <script src="vendor/jspdf.umd.min.js"></script>
 </head>
@@ -2761,10 +2761,8 @@
     const PDF_EXPORT_HEIGHT_PX = 1123;
     const PDF_PAGE_WIDTH_MM = 210;
     const PDF_PAGE_HEIGHT_MM = 297;
-    const PDF_VECTOR_TEXT_SELECTOR = [
-      ".cover-page .word-field",
-      ".flag-projection-page .word-field:not(.word-text-box)"
-    ].join(", ");
+    const PDF_FIELD_FONT_SCALE = 1.45;
+    const PDF_VECTOR_TEXT_SELECTOR = ".word-field";
 
     let layoutPositions = {};
     let layoutDrag = null;
@@ -5162,7 +5160,7 @@
           if (!text) return null;
           const rect = el.getBoundingClientRect();
           const fontSizePx = parseFloat(style.fontSize) || 10;
-          const fontSizePt = Math.max(4, Math.min(72, fontSizePx));
+          const fontSizePt = Math.max(4, Math.min(96, fontSizePx * PDF_FIELD_FONT_SCALE));
           const widthMm = (rect.width / pageRect.width) * PDF_PAGE_WIDTH_MM;
           const leftMm = ((rect.left - pageRect.left) / pageRect.width) * PDF_PAGE_WIDTH_MM;
           const topMm = ((rect.top - pageRect.top) / pageRect.height) * PDF_PAGE_HEIGHT_MM;
@@ -5180,6 +5178,8 @@
             y: topMm + fontHeightMm * 0.82,
             fontSizePt,
             align,
+            widthMm,
+            multiline: style.whiteSpace !== "nowrap",
             color: hexToRgbParts(style.color || el.style.color),
             bold: currentFieldBold(el)
           };
@@ -5198,11 +5198,45 @@
         pdf.setFont("helvetica", field.bold ? "bold" : "normal");
         pdf.setFontSize(field.fontSizePt);
         pdf.setTextColor(field.color[0], field.color[1], field.color[2]);
-        pdf.text(field.text, field.x, field.y, {
-          align: field.align,
-          baseline: "alphabetic"
-        });
+        if (field.multiline && field.widthMm > 0) {
+          const lines = pdf.splitTextToSize(field.text, Math.max(6, field.widthMm));
+          pdf.text(lines, field.x, field.y, {
+            align: field.align,
+            baseline: "alphabetic",
+            lineHeightFactor: 1.15
+          });
+        } else {
+          pdf.text(field.text, field.x, field.y, {
+            align: field.align,
+            baseline: "alphabetic"
+          });
+        }
       });
+    }
+
+    function pdfImageFormat(src) {
+      const clean = String(src || "").split("?")[0].split("#")[0].toLowerCase();
+      if (clean.startsWith("data:image/png") || clean.endsWith(".png")) return "PNG";
+      if (clean.startsWith("data:image/webp") || clean.endsWith(".webp")) return "WEBP";
+      return "JPEG";
+    }
+
+    function drawPdfTemplatePage(pdf, page) {
+      const background = page.querySelector(".word-bg");
+      if (!background || !background.complete || !background.naturalWidth) return false;
+      const source = background.currentSrc || background.src;
+      pdf.addImage(
+        background,
+        pdfImageFormat(source),
+        0,
+        0,
+        PDF_PAGE_WIDTH_MM,
+        PDF_PAGE_HEIGHT_MM,
+        undefined,
+        "FAST"
+      );
+      drawPdfVectorText(pdf, collectPdfVectorText(page));
+      return true;
     }
 
     function downloadPdfBlob(blob, filename) {
@@ -5271,6 +5305,7 @@
 
         for (const [index, page] of pages.entries()) {
           if (index) pdf.addPage("a4", "portrait");
+          if (drawPdfTemplatePage(pdf, page)) continue;
           const vectorText = collectPdfVectorText(page);
           hidePdfVectorText(vectorText);
           const canvas = await window.html2canvas(page, {
@@ -5509,7 +5544,7 @@
 
     if ("serviceWorker" in navigator && location.protocol !== "file:") {
       window.addEventListener("load", () => {
-        navigator.serviceWorker.register("./service-worker.js?v=13").catch((error) => {
+        navigator.serviceWorker.register("./service-worker.js?v=15").catch((error) => {
           console.warn("Service worker nao registrado.", error);
         });
       });

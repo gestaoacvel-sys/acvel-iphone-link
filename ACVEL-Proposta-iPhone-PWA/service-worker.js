@@ -1,8 +1,9 @@
-const CACHE_NAME = "acvel-proposta-v13";
+const CACHE_NAME = "acvel-proposta-v15";
 const APP_SHELL = [
   "./",
   "./index.html",
   "./android-mobile.css",
+  "./android-mobile.css?v=15",
   "./manifest.webmanifest",
   "./assets/apple-touch-icon.png",
   "./assets/pwa-icon-192.png",
