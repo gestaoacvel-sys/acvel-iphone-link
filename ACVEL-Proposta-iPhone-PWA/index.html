@@ -915,6 +915,45 @@
       opacity: 1 !important;
     }
 
+    .pdf-export-root {
+      position: fixed;
+      top: 0;
+      left: -10000px;
+      z-index: -1;
+      width: 794px;
+      min-height: 1123px;
+      overflow: visible;
+      pointer-events: none;
+      background: #fff;
+    }
+
+    .pdf-export-root .proposal-page,
+    .pdf-export-root .profit-report-panel {
+      zoom: 1 !important;
+    }
+
+    .pdf-export-root .proposal-page {
+      display: block !important;
+      flex: none !important;
+      width: 794px !important;
+      height: 1123px !important;
+      max-width: none !important;
+      min-height: 0 !important;
+      margin: 0 0 24px !important;
+      overflow: hidden !important;
+      transform: none !important;
+      contain: none !important;
+      content-visibility: visible !important;
+      border-radius: 0 !important;
+      box-shadow: none !important;
+    }
+
+    .pdf-export-root .is-layout-selected,
+    .pdf-export-root .is-dragging {
+      outline: 0 !important;
+      box-shadow: none !important;
+    }
+
     .template-proposal .proposal-page {
       background: #fff;
     }
@@ -2718,11 +2757,8 @@
     const PANEL_WIDTH_MIN = 320;
     const PANEL_WIDTH_MAX = 760;
     const MOBILE_A4_WIDTH_PX = 794;
-    const MOBILE_PDF_FIELD_SCALE = 1.58;
-    const MOBILE_PDF_FIELD_SELECTOR = [
-      ".cover-page .word-field",
-      ".flag-projection-page .word-field:not(.word-text-box)"
-    ].join(", ");
+    const PDF_EXPORT_WIDTH_PX = 794;
+    const PDF_EXPORT_HEIGHT_PX = 1123;
 
     let layoutPositions = {};
     let layoutDrag = null;
@@ -5036,8 +5072,8 @@
       requestAnimationFrame(fitMobilePreview);
     }
 
-    function waitForProposalImages() {
-      const images = Array.from(document.querySelectorAll(".proposal-page img"));
+    function waitForImagesIn(root) {
+      const images = Array.from(root.querySelectorAll(".proposal-page img"));
       return Promise.all(images.map((img) => {
         if (img.complete && img.naturalWidth > 0) return Promise.resolve();
         if (typeof img.decode === "function") return img.decode().catch(() => {});
@@ -5046,6 +5082,10 @@
           img.addEventListener("error", resolve, { once: true });
         });
       }));
+    }
+
+    function waitForProposalImages() {
+      return waitForImagesIn(document);
     }
 
     function safePdfFileName() {
@@ -5064,22 +5104,35 @@
         .filter((page) => window.getComputedStyle(page).display !== "none");
     }
 
-    function applyTemporaryMobilePdfFieldScale() {
-      if (!isMobilePreviewMode()) return () => {};
-      const fields = Array.from(document.querySelectorAll(MOBILE_PDF_FIELD_SELECTOR))
-        .filter((el) => !el.classList.contains("is-layout-hidden"));
-      const originals = fields.map((el) => ({ el, fontSize: el.style.fontSize }));
-      fields.forEach((el) => {
-        const current = parseFloat(getComputedStyle(el).fontSize);
-        if (!Number.isFinite(current)) return;
-        el.style.fontSize = `${Number((current * MOBILE_PDF_FIELD_SCALE).toFixed(2))}px`;
-      });
-      return () => {
-        originals.forEach(({ el, fontSize }) => {
-          if (fontSize) el.style.fontSize = fontSize;
-          else el.style.removeProperty("font-size");
+    function createPdfExportRoot(sourcePages) {
+      const root = document.createElement("div");
+      root.className = "pdf-export-root";
+      root.setAttribute("aria-hidden", "true");
+      sourcePages.forEach((page) => {
+        const clone = page.cloneNode(true);
+        clone.classList.remove("is-layout-selected", "is-dragging");
+        clone.querySelectorAll(".is-layout-selected, .is-dragging").forEach((el) => {
+          el.classList.remove("is-layout-selected", "is-dragging");
         });
-      };
+        clone.querySelectorAll("[id]").forEach((el) => el.removeAttribute("id"));
+        clone.style.setProperty("width", `${PDF_EXPORT_WIDTH_PX}px`, "important");
+        clone.style.setProperty("height", `${PDF_EXPORT_HEIGHT_PX}px`, "important");
+        clone.style.setProperty("max-width", "none", "important");
+        clone.style.setProperty("min-height", "0", "important");
+        clone.style.setProperty("zoom", "1", "important");
+        clone.style.setProperty("transform", "none", "important");
+        clone.style.setProperty("contain", "none", "important");
+        clone.style.setProperty("content-visibility", "visible", "important");
+        clone.style.setProperty("box-shadow", "none", "important");
+        clone.style.setProperty("border-radius", "0", "important");
+        root.appendChild(clone);
+      });
+      document.body.appendChild(root);
+      return root;
+    }
+
+    function pdfExportCanvasScale() {
+      return Math.min(2.5, Math.max(2, window.devicePixelRatio || 2));
     }
 
     function downloadPdfBlob(blob, filename) {
@@ -5128,33 +5181,38 @@
 
     async function savePdfWithMobileEngine() {
       if (!window.html2canvas || !window.jspdf?.jsPDF) return false;
-      const pages = proposalPagesForPdf();
-      if (!pages.length) return false;
+      const sourcePages = proposalPagesForPdf();
+      if (!sourcePages.length) return false;
 
       const filename = safePdfFileName();
       const { jsPDF } = window.jspdf;
       const pdf = new jsPDF({ orientation: "portrait", unit: "mm", format: "a4", compress: true });
 
-      let restorePdfFieldScale = () => {};
+      let exportRoot = null;
       document.body.classList.add("pdf-render-mode");
       await new Promise((resolve) => requestAnimationFrame(resolve));
 
       try {
-        restorePdfFieldScale = applyTemporaryMobilePdfFieldScale();
+        exportRoot = createPdfExportRoot(sourcePages);
+        await waitForImagesIn(exportRoot);
         await new Promise((resolve) => requestAnimationFrame(resolve));
+        const pages = Array.from(exportRoot.querySelectorAll(".proposal-page"));
+        const canvasScale = pdfExportCanvasScale();
 
         for (const [index, page] of pages.entries()) {
           if (index) pdf.addPage("a4", "portrait");
           const canvas = await window.html2canvas(page, {
             backgroundColor: "#ffffff",
-            scale: 2,
+            scale: canvasScale,
             useCORS: true,
             allowTaint: true,
             logging: false,
             scrollX: 0,
             scrollY: 0,
-            windowWidth: page.scrollWidth,
-            windowHeight: page.scrollHeight
+            width: PDF_EXPORT_WIDTH_PX,
+            height: PDF_EXPORT_HEIGHT_PX,
+            windowWidth: PDF_EXPORT_WIDTH_PX,
+            windowHeight: PDF_EXPORT_HEIGHT_PX
           });
           const image = canvas.toDataURL("image/jpeg", 0.94);
           pdf.addImage(image, "JPEG", 0, 0, 210, 297, undefined, "FAST");
@@ -5184,7 +5242,7 @@
         await deliverPdfBlob(pdf.output("blob"), filename);
         return true;
       } finally {
-        restorePdfFieldScale();
+        if (exportRoot) exportRoot.remove();
         document.body.classList.remove("pdf-render-mode");
         fitMobilePreview();
       }
@@ -5378,7 +5436,7 @@
 
     if ("serviceWorker" in navigator && location.protocol !== "file:") {
       window.addEventListener("load", () => {
-        navigator.serviceWorker.register("./service-worker.js?v=11").catch((error) => {
+        navigator.serviceWorker.register("./service-worker.js?v=12").catch((error) => {
           console.warn("Service worker nao registrado.", error);
         });
       });
