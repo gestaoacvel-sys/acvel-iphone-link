@@ -383,88 +383,88 @@ body.mobile-preview-mode .profit-report-panel {
   touch-action: pan-y;
 }
 
-body.pdf-render-mode .proposal-page,
-body.pdf-render-mode .profit-report-panel {
+body.pdf-render-mode .pdf-export-root .proposal-page,
+body.pdf-render-mode .pdf-export-root .profit-report-panel {
   zoom: 1 !important;
   contain: none !important;
   content-visibility: visible !important;
 }
 
 body.mobile-preview-mode .proposal-page h1,
-body.pdf-render-mode .proposal-page h1 {
+body.pdf-render-mode .pdf-export-root .proposal-page h1 {
   font-size: 29px;
 }
 
 body.mobile-preview-mode .proposal-page h2,
-body.pdf-render-mode .proposal-page h2 {
+body.pdf-render-mode .pdf-export-root .proposal-page h2 {
   font-size: 29px;
 }
 
 body.mobile-preview-mode .cover-page h1,
-body.pdf-render-mode .cover-page h1 {
+body.pdf-render-mode .pdf-export-root .cover-page h1 {
   font-size: 24px;
 }
 
 body.mobile-preview-mode .hero,
-body.pdf-render-mode .hero {
+body.pdf-render-mode .pdf-export-root .hero {
   grid-template-columns: 1fr 66mm;
 }
 
 body.mobile-preview-mode .cover-page .hero,
-body.pdf-render-mode .cover-page .hero {
+body.pdf-render-mode .pdf-export-root .cover-page .hero {
   grid-template-columns: 1fr 54mm;
 }
 
 body.mobile-preview-mode .hero img,
-body.pdf-render-mode .hero img {
+body.pdf-render-mode .pdf-export-root .hero img {
   display: block;
 }
 
 body.mobile-preview-mode .saving-card,
-body.pdf-render-mode .saving-card {
+body.pdf-render-mode .pdf-export-root .saving-card {
   grid-template-columns: 18mm 1fr 38mm;
 }
 
 body.mobile-preview-mode .cover-page .saving-card,
-body.pdf-render-mode .cover-page .saving-card {
+body.pdf-render-mode .pdf-export-root .cover-page .saving-card {
   grid-template-columns: 13mm 1fr 31mm;
 }
 
 body.mobile-preview-mode .grid-2,
-body.pdf-render-mode .grid-2,
+body.pdf-render-mode .pdf-export-root .grid-2,
 body.mobile-preview-mode .consumer-card,
-body.pdf-render-mode .consumer-card,
+body.pdf-render-mode .pdf-export-root .consumer-card,
 body.mobile-preview-mode .eco-row,
-body.pdf-render-mode .eco-row {
+body.pdf-render-mode .pdf-export-root .eco-row {
   grid-template-columns: 1fr 1fr;
 }
 
 body.mobile-preview-mode .info-strip,
-body.pdf-render-mode .info-strip {
+body.pdf-render-mode .pdf-export-root .info-strip {
   grid-template-columns: 18mm 1fr 18mm 1fr;
 }
 
 body.mobile-preview-mode .cover-page .info-strip,
-body.pdf-render-mode .cover-page .info-strip {
+body.pdf-render-mode .pdf-export-root .cover-page .info-strip {
   grid-template-columns: 13mm 1fr 13mm 1fr;
 }
 
 body.mobile-preview-mode .feature-row,
-body.pdf-render-mode .feature-row,
+body.pdf-render-mode .pdf-export-root .feature-row,
 body.mobile-preview-mode .steps,
-body.pdf-render-mode .steps,
+body.pdf-render-mode .pdf-export-root .steps,
 body.mobile-preview-mode .estimate-cards,
-body.pdf-render-mode .estimate-cards {
+body.pdf-render-mode .pdf-export-root .estimate-cards {
   grid-template-columns: repeat(3, 1fr);
 }
 
 body.mobile-preview-mode .pill,
-body.pdf-render-mode .pill {
+body.pdf-render-mode .pdf-export-root .pill {
   justify-self: end;
 }
 
 body.mobile-preview-mode .footer-contact,
-body.pdf-render-mode .footer-contact {
+body.pdf-render-mode .pdf-export-root .footer-contact {
   position: absolute;
   left: 15mm;
   right: 15mm;
