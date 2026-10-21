@@ -44,7 +44,7 @@
 
     html {
       max-width: 100%;
-      overflow-x: hidden;
+      overflow-x: clip;
     }
 
     body {
@@ -53,7 +53,7 @@
       background: var(--app-bg);
       font-size: 14px;
       line-height: 1.35;
-      overflow-x: hidden;
+      overflow-x: clip;
     }
 
     button, input, select, textarea {
@@ -179,7 +179,7 @@
       gap: 20px;
       padding: calc(var(--topbar-height) + 20px) 20px 20px;
       min-width: 0;
-      overflow-x: hidden;
+      overflow-x: clip;
     }
 
     .control-panel {
@@ -437,9 +437,8 @@
       gap: 18px;
       width: 100%;
       min-width: 0;
-      overflow-x: hidden;
+      overflow-x: clip;
       max-width: 100%;
-      overscroll-behavior: contain;
       scroll-margin-top: calc(var(--topbar-height) + 20px);
     }
 
