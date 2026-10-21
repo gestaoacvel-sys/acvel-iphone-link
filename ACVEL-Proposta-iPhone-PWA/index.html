@@ -2,7 +2,7 @@
 <html lang="pt-BR">
 <head>
   <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="viewport" content="width=1280">
   <meta name="theme-color" content="#06255f">
   <meta name="mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-capable" content="yes">
@@ -2033,7 +2033,9 @@
       margin: 0;
     }
   </style>
-  <link rel="stylesheet" href="android-mobile.css?v=15">
+  <!-- Layout desktop forçado no iPhone: android-mobile.css desativado. Para voltar ao layout de celular, remova o comentário. -->
+  <!-- <link rel="stylesheet" href="android-mobile.css?v=16"> -->
+  <style>body{-webkit-text-size-adjust:100%;text-size-adjust:100%}.proposal-page,.proposal-page *{-webkit-text-size-adjust:none!important;text-size-adjust:none!important}</style>
   <script src="vendor/html2canvas.min.js"></script>
   <script src="vendor/jspdf.umd.min.js"></script>
 </head>
@@ -3958,7 +3960,10 @@
       return true;
     }
 
+    const FORCE_DESKTOP_LAYOUT = true;
+
     function isMobilePreviewMode() {
+      if (FORCE_DESKTOP_LAYOUT) return false;
       const params = new URLSearchParams(window.location.search);
       if (params.has("mobilePreview") || isCapacitorNativeApp()) return true;
       const userAgent = navigator.userAgent || "";
@@ -5544,7 +5549,7 @@
 
     if ("serviceWorker" in navigator && location.protocol !== "file:") {
       window.addEventListener("load", () => {
-        navigator.serviceWorker.register("./service-worker.js?v=15").catch((error) => {
+        navigator.serviceWorker.register("./service-worker.js?v=16").catch((error) => {
           console.warn("Service worker nao registrado.", error);
         });
       });
