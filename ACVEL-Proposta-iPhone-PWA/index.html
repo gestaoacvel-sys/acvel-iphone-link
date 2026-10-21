@@ -2335,7 +2335,7 @@
       <div class="layout-tools" id="layoutTools" hidden>
         <div>
           <strong>Modo ajuste de layout</strong>
-          <span id="layoutStatus">Arraste os campos na proposta. As posicoes ficam salvas neste navegador.</span>
+          <span id="layoutStatus">Arraste os campos. As posições ficam neste navegador até você exportar o padrão para a equipe.</span>
         </div>
         <div class="layout-editor">
           <label>Texto / sufixo
@@ -2374,6 +2374,7 @@
         <div class="layout-actions">
           <button class="btn" type="button" id="hideFieldBtn" disabled><span class="btn-icon">-</span>Ocultar campo</button>
           <button class="btn" type="button" id="showAllFieldsBtn"><span class="btn-icon">+</span>Mostrar todos</button>
+          <button class="btn" type="button" id="exportLayoutBtn" title="Baixa posições, larguras e tamanhos de fonte para publicar como padrão para toda a equipe"><span class="btn-icon">↓</span>Exportar layout da equipe</button>
           <button class="btn" type="button" id="resetLayoutBtn"><span class="btn-icon">R</span>Restaurar padrao</button>
         </div>
       </div>
@@ -2764,6 +2765,7 @@
     const PDF_PAGE_HEIGHT_MM = 297;
     const PDF_FIELD_FONT_SCALE = 1.45;
     const PDF_VECTOR_TEXT_SELECTOR = ".word-field";
+    const TEAM_LAYOUT_DEFAULTS = {"formatVersion":1,"fields":{"wMonthlySaving":{"left":20.92,"top":35.76,"width":24,"fontSize":18},"wSavingPercent":{"left":70.24,"top":35.78,"fontSize":13},"wAnnualSavingInline":{"left":58.13,"top":38.8,"width":17,"fontSize":12},"wCompanyName":{"left":6.8,"top":47.94,"width":38,"fontSize":15},"wCompanyAddress":{"left":6.68,"top":51.81,"width":38,"fontSize":15},"wUcCode":{"left":53.53,"top":47.84,"width":35,"fontSize":15},"wValidUntil":{"left":53.34,"top":51.81,"width":35,"fontSize":15},"wWithoutAcvel":{"left":7,"top":60.26,"width":25,"fontSize":15},"wWithAcvel":{"left":36.62,"top":60.25,"width":25,"fontSize":15},"wEconomy":{"left":68.14,"top":60.25,"width":25,"fontSize":15},"wAnnualSaving":{"left":14.38,"top":68.28,"width":25,"fontSize":15},"wTenYearSaving":{"left":61.77,"top":68.28,"width":25,"fontSize":15},"wValidUntilBig":{"left":71.23,"top":76.05,"width":19,"fontSize":15},"wSubgroup":{"left":23.23,"top":20.1,"fontSize":12},"wTariffMode":{"left":24.76,"top":26.47,"fontSize":12},"wUtilityName":{"left":26.41,"top":32.44,"fontSize":12},"wEnergyType":{"left":27.06,"top":38.33,"fontSize":12},"wConsumptionFp":{"left":73.6,"top":20.48,"fontSize":12},"wConsumptionP":{"left":70.1,"top":26.47,"fontSize":12},"wDemandFp":{"left":73.6,"top":32.67,"fontSize":12},"wDemandP":{"left":70.1,"top":38.33,"fontSize":12},"wProjYear0":{"left":4.7,"top":51.75,"width":8.5,"fontSize":12},"wProjGreenValue0":{"left":13.83,"top":51.54,"width":18,"fontSize":12},"wProjGreenPercent0":{"left":32.27,"top":51.54,"width":7,"fontSize":12},"wProjYellowValue0":{"left":39.79,"top":51.46,"width":19,"fontSize":12},"wProjYellowPercent0":{"left":60.22,"top":51.54,"width":7,"fontSize":12},"wProjRedValue0":{"left":67.79,"top":51.54,"width":19,"fontSize":12},"wProjRedPercent0":{"left":88.49,"top":51.54,"width":7,"fontSize":12},"wProjYear1":{"left":4.59,"top":55.71,"width":8.5,"fontSize":12},"wProjGreenValue1":{"left":13.49,"top":55.64,"width":18,"fontSize":12},"wProjGreenPercent1":{"left":32.2,"top":55.64,"width":7,"fontSize":12},"wProjYellowValue1":{"left":39.06,"top":55.64,"width":19,"fontSize":12},"wProjYellowPercent1":{"left":60.03,"top":55.64,"width":7,"fontSize":12},"wProjRedValue1":{"left":67.77,"top":55.56,"width":19,"fontSize":12},"wProjRedPercent1":{"left":88.6,"top":55.64,"width":7,"fontSize":12},"wProjYear2":{"left":4.27,"top":59.19,"width":8.5,"fontSize":12},"wProjGreenValue2":{"left":13.16,"top":59.2,"width":18,"fontSize":12},"wProjGreenPercent2":{"left":31.21,"top":59.12,"width":7,"fontSize":12},"wProjYellowValue2":{"left":39.47,"top":59.2,"width":19,"fontSize":12},"wProjYellowPercent2":{"left":59.73,"top":59.43,"width":7,"fontSize":12},"wProjRedValue2":{"left":67.87,"top":59.43,"width":19,"fontSize":12},"wProjRedPercent2":{"left":88.27,"top":59.51,"width":7,"fontSize":12},"wProjYear3":{"left":4.27,"top":63.21,"width":8.5,"fontSize":12},"wProjGreenValue3":{"left":13.15,"top":63.21,"width":18,"fontSize":12},"wProjGreenPercent3":{"left":31.26,"top":63.21,"width":7,"fontSize":12},"wProjYellowValue3":{"left":39.27,"top":62.99,"width":19,"fontSize":12},"wProjYellowPercent3":{"left":59.87,"top":62.92,"width":7,"fontSize":12},"wProjRedValue3":{"left":67.87,"top":62.99,"width":19,"fontSize":12},"wProjRedPercent3":{"left":88.27,"top":63.22,"width":7,"fontSize":12},"wProjYear4":{"left":4.27,"top":66.88,"width":8.5,"fontSize":12},"wProjGreenValue4":{"left":13.46,"top":66.81,"width":18,"fontSize":12},"wProjGreenPercent4":{"left":31.46,"top":66.81,"width":7,"fontSize":12},"wProjYellowValue4":{"left":38.86,"top":66.88,"width":19,"fontSize":12},"wProjYellowPercent4":{"left":59.57,"top":66.81,"width":7,"fontSize":12},"wProjRedValue4":{"left":67.46,"top":66.81,"width":19,"fontSize":12},"wProjRedPercent4":{"left":88.27,"top":66.86,"width":7,"fontSize":12},"wTotalGreen":{"left":4.66,"top":78.97,"width":28,"fontSize":17},"wTotalYellow":{"left":36,"top":78.92,"width":28,"fontSize":17},"wTotalRed":{"left":66.26,"top":78.92,"width":28,"fontSize":17},"wCo2":{"left":16.34,"top":85.96,"width":6,"fontSize":12},"wTrees":{"left":63.53,"top":86.03,"width":5,"fontSize":12},"wContractUc":{"left":61.11,"top":18.84,"fontSize":12},"wContractDiscount":{"left":66.41,"top":50.84,"fontSize":12},"wContractMonths":{"left":37.03,"top":54.1,"fontSize":12},"wContractCityDate":{"left":13.31,"top":73.37,"fontSize":12},"wContractExtraText2":{"left":64.7,"top":50.88,"width":36,"fontSize":12},"wSignatureCnpj":{"left":70.11,"top":86.08,"width":24,"fontSize":12}}};
 
     let layoutPositions = {};
     let layoutDrag = null;
@@ -4210,6 +4212,37 @@
       if (storage) storage.setItem(LAYOUT_STORAGE_KEY, JSON.stringify(layoutPositions));
     }
 
+    function exportTeamLayoutPositions() {
+      const fields = {};
+      document.querySelectorAll(".word-field[id]").forEach((el) => {
+        const saved = layoutPositions[el.id];
+        if (!saved) return;
+        const position = {};
+        ["left", "top", "width", "fontSize"].forEach((key) => {
+          if (!Number.isFinite(saved[key])) return;
+          position[key] = Number(saved[key].toFixed(key === "fontSize" ? 1 : 2));
+        });
+        if (Object.keys(position).length) fields[el.id] = position;
+      });
+
+      if (!Object.keys(fields).length) {
+        setLayoutStatus("Nenhuma posição personalizada para exportar. Mova os campos primeiro.");
+        return;
+      }
+
+      const payload = { formatVersion: 1, fields };
+      const blob = new Blob([JSON.stringify(payload, null, 2)], { type: "application/json" });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement("a");
+      link.href = url;
+      link.download = "acvel-layout-para-equipe.json";
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      setTimeout(() => URL.revokeObjectURL(url), 1000);
+      setLayoutStatus("Arquivo baixado. Envie-o para publicar posições, larguras e tamanhos como padrão para todos.");
+    }
+
     function percentValue(value, fallback = 0) {
       const parsed = parseFloat(String(value || "").replace("%", ""));
       return Number.isFinite(parsed) ? parsed : fallback;
@@ -4233,6 +4266,11 @@
     }
 
     function rememberDefaultLayout(el) {
+      const teamDefault = TEAM_LAYOUT_DEFAULTS.fields[el.id] || {};
+      if (Number.isFinite(teamDefault.left)) el.style.left = `${teamDefault.left}%`;
+      if (Number.isFinite(teamDefault.top)) el.style.top = `${teamDefault.top}%`;
+      if (Number.isFinite(teamDefault.width)) el.style.width = `${teamDefault.width}%`;
+      if (Number.isFinite(teamDefault.fontSize)) el.style.fontSize = `${teamDefault.fontSize}px`;
       if (el.dataset.defaultLeft === undefined) el.dataset.defaultLeft = String(percentValue(el.style.left));
       if (el.dataset.defaultTop === undefined) el.dataset.defaultTop = String(percentValue(el.style.top));
       if (el.dataset.defaultWidth === undefined) el.dataset.defaultWidth = String(percentValue(el.style.width, NaN));
@@ -5483,6 +5521,7 @@
       document.getElementById("multiSelectBtn").addEventListener("click", toggleMultiLayoutSelectMode);
       document.getElementById("hideFieldBtn").addEventListener("click", hideSelectedLayoutField);
       document.getElementById("showAllFieldsBtn").addEventListener("click", showAllLayoutFields);
+      document.getElementById("exportLayoutBtn").addEventListener("click", exportTeamLayoutPositions);
       document.getElementById("resetLayoutBtn").addEventListener("click", resetLayoutPositions);
       document.getElementById("fieldTextInput").addEventListener("input", (event) => setSelectedFieldText(event.target.value));
       document.getElementById("clearFieldTextBtn").addEventListener("click", clearSelectedFieldText);
